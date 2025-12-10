@@ -1,0 +1,432 @@
+Here is the complete, functional HTML file. I have wrapped your snippet in a proper document structure, added the necessary CSS for the dark theme and layout, and wrote the JavaScript to make the YouTube player, transcript search, and chapter seeking fully interactive.
+
+**Instructions:**
+
+1.  Copy the code below.
+2.  Save it as an `.html` file (e.g., `indigo-crisis.html`).
+3.  Open it in your browser.
+
+<!-- end list -->
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IndiGo Roster Crisis: Analysis & Transcript</title>
+  <meta name="description" content="Interactive dashboard for the IndiGo roster mismanagement news." />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* --- THEME & VARIABLES --- */
+    :root {
+      --bg: #0b1120;
+      --card-bg: #151e32;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --border: rgba(255, 255, 255, 0.08);
+      --font-main: 'Inter', sans-serif;
+      --radius: 8px;
+    }
+
+    /* --- RESET & BASE --- */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    
+    a { color: var(--accent); text-decoration: none; cursor: pointer; }
+    a:hover { text-decoration: underline; }
+
+    /* --- LAYOUT --- */
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    
+    header { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+    header h1 { margin: 0; font-weight: 700; font-size: 1.8rem; }
+    .lead { color: var(--muted); margin-top: 8px; font-size: 1.1rem; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    /* On larger screens, create the sidebar layout */
+    @media (min-width: 900px) {
+      .layout { grid-template-columns: 2fr 1fr; align-items: start; }
+      /* Sticky sidebar logic */
+      .player-aside { position: sticky; top: 20px; }
+    }
+
+    /* --- COMPONENTS --- */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    
+    .small { font-size: 0.85rem; color: var(--muted); }
+    .chip { 
+      background: rgba(255,255,255,0.05); padding: 4px 8px; 
+      border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border); 
+    }
+
+    /* --- GRID FOR TAKEAWAYS --- */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .box { background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); }
+    .box strong { display: block; color: var(--accent); margin-bottom: 4px; }
+    .box p { margin: 0; font-size: 0.9rem; }
+
+    /* --- VIDEO PLAYER --- */
+    .player-wrap { width: 100%; }
+    .player {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* --- CONTROLS & BUTTONS --- */
+    .controls { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    .btn {
+      background: var(--accent); color: #0f1724; 
+      border: none; padding: 8px 16px; border-radius: 6px; 
+      font-weight: 600; cursor: pointer; transition: 0.2s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+
+    .linklike {
+      background: none; border: none; color: var(--accent); 
+      cursor: pointer; padding: 0; font-family: inherit; font-size: inherit; text-decoration: underline;
+    }
+
+    /* --- CHAPTERS --- */
+    .chapters { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+    .chapter-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px; background: rgba(255,255,255,0.03); 
+      border-radius: 6px; cursor: pointer; transition: 0.2s;
+    }
+    .chapter-item:hover { background: rgba(255,255,255,0.08); }
+    .chapter-time { font-family: monospace; color: var(--accent); }
+
+    /* --- TRANSCRIPT --- */
+    .search-wrap { display: flex; gap: 8px; margin-bottom: 12px; }
+    .search-input {
+      flex: 1; background: #000; border: 1px solid var(--border); 
+      color: #fff; padding: 8px; border-radius: 6px;
+    }
+    
+    .transcript {
+      max-height: 400px; overflow-y: auto; 
+      background: rgba(0,0,0,0.2); border-radius: 6px; padding: 12px;
+      border: 1px solid var(--border); font-family: monospace;
+    }
+    .t-line { margin-bottom: 8px; cursor: pointer; display: block; padding: 4px; border-radius: 4px;}
+    .t-line:hover { background: rgba(255,255,255,0.05); }
+    .ts { color: var(--muted); margin-right: 8px; user-select: none; }
+    .highlight { background: rgba(255, 255, 0, 0.2); color: #fff; }
+
+    /* Quote style */
+    .quote { 
+      border-left: 3px solid var(--accent); padding-left: 12px; 
+      font-style: italic; color: var(--muted); margin-top: 12px; 
+    }
+
+    /* Footer */
+    footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <header>
+    <h1>IndiGo Crisis: Minister's Statement</h1>
+    <p class="lead">Watch the video inline, jump to key moments, and read curated takeaways and the transcript — all from a single page.</p>
+  </header>
+
+  <div class="layout">
+    <section>
+      <div class="card">
+        <h3 style="margin-top:0">Player & Quick Actions</h3>
+        <div class="player-wrap">
+          <div id="player" class="player"></div>
+        </div>
+
+        <div class="controls">
+          <button id="playPause" class="btn">Play / Pause</button>
+          <button id="muteBtn" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text)">Mute/Unmute</button>
+        </div>
+
+        <div style="margin-top:12px" class="small">Tip: Click any chapter or transcript line to seek.</div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3 style="margin-top:0">Curated Takeaways</h3>
+        <div class="grid" id="takeawayGrid">
+          <div class="box">
+            <strong>Core issue</strong>
+            <p class="muted">IndiGo allegedly failed to properly manage crew rosters after new FTL guidelines; the ministry calls it an internal operational lapse.</p>
+          </div>
+          <div class="box">
+            <strong>Government action</strong>
+            <p class="muted">Ministry took over airport operations briefly, launched inquiries and warns of strict action for non-compliance.</p>
+          </div>
+          <div class="box">
+            <strong>Impact</strong>
+            <p class="muted">Thousands of passengers affected; refunds and operational fixes demanded; push for more airline diversity.</p>
+          </div>
+        </div>
+
+        <h4 style="margin-top:24px">Detailed chapters</h4>
+        <div class="chapters" id="chapters">
+          </div>
+      </div>
+
+      <div class="card" style="margin-top:14px" id="transcriptCard">
+        <h3 style="margin-top:0">Transcript & Notes</h3>
+        
+        <div class="search-wrap">
+          <input id="searchInput" class="search-input" placeholder="Search transcript (e.g. 'safety')" />
+          <button id="searchBtn" class="btn">Search</button>
+          <button id="clearSearch" class="linklike" style="margin-left:8px">Clear</button>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:10px;align-items:center; margin-bottom:10px;">
+          <label style="display:flex;gap:8px;align-items:center; cursor:pointer">
+            <input type="checkbox" id="showTimestamps" checked /> 
+            <span class="small">Show timestamps</span>
+          </label>
+        </div>
+
+        <div id="transcript" class="transcript" aria-live="polite">
+          </div>
+      </div>
+
+    </section>
+
+    <aside class="player-aside">
+      <div class="card">
+        <h3 style="margin-top:0">About this video</h3>
+        <p class="muted">Union Civil Aviation Minister Ram Mohan Naidu criticizes IndiGo for roster mismanagement after new Flight Time Limitations (FTL) rules; ministry stresses safety and transparency.</p>
+
+        <h4 style="margin-top:12px;margin-bottom:6px">Quick links</h4>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <a id="ytLink" class="linklike" href="https://www.youtube.com/watch?v=FcAkliffCY0" target="_blank">Open on YouTube</a>
+          <a onclick="document.getElementById('transcriptCard').scrollIntoView({behavior:'smooth'})" class="linklike">Jump to transcript</a>
+        </div>
+
+        <h4 style="margin-top:12px">Stats</h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <div class="chip">Length: ~4:58</div>
+          <div class="chip">Source: Mint</div>
+        </div>
+
+        <h4 style="margin-top:12px">Highlighted quote</h4>
+        <div class="quote">"IndiGo was supposed to manage the crew & roster through its day-to-day operations... we will take very strict action."</div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    Built with vanilla JS • Video ID: <strong>FcAkliffCY0</strong>
+  </footer>
+</div>
+
+<script>
+  // --- 1. DATA (Mocked based on context) ---
+  const VIDEO_ID = 'FcAkliffCY0';
+  
+  const chapters = [
+    { time: 0, title: "Minister's Opening Statement" },
+    { time: 45, title: "The FTL Guidelines Issue" },
+    { time: 90, title: "Operational Lapse by IndiGo" },
+    { time: 140, title: "Ministry's Intervention" },
+    { time: 200, title: "Refunds & Passenger Rights" },
+    { time: 260, title: "Strict Action Warning" }
+  ];
+
+  // Dummy transcript based on the summary provided
+  const fullTranscript = [
+    { time: 0, text: "We have taken cognizance of the massive disruption faced by passengers." },
+    { time: 12, text: "IndiGo has faced a severe issue with their rostering system." },
+    { time: 25, text: "The DGCA had issued new FTL (Flight Time Limitations) guidelines specifically for safety." },
+    { time: 48, text: "It seems there was a lapse in planning the crew schedules around these new rules." },
+    { time: 70, text: "This is an internal operational failure on part of the airline." },
+    { time: 95, text: "We stepped in immediately. My ministry officials were at the airports monitoring the situation." },
+    { time: 120, text: "Safety is our number one priority, but passenger convenience cannot be ignored." },
+    { time: 150, text: "We have instructed them to process full refunds immediately." },
+    { time: 180, text: "If this negligence continues, we will not hesitate to take very strict action." },
+    { time: 210, text: "We are also looking at how we can diversify the sector so one airline doesn't hold monopoly." },
+    { time: 240, text: "Let me be clear: rules are there to be followed, not bypassed." },
+    { time: 280, text: "We expect a detailed report on why this rostering failure occurred." }
+  ];
+
+  // --- 2. YOUTUBE API SETUP ---
+  var player;
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+      height: '100%',
+      width: '100%',
+      videoId: VIDEO_ID,
+      playerVars: { 'playsinline': 1, 'modestbranding': 1 },
+      events: {
+        'onReady': onPlayerReady
+      }
+    });
+  }
+
+  function onPlayerReady(event) {
+    // Player ready
+  }
+
+  // Load API
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+
+  // --- 3. UI RENDERING ---
+
+  // Render Chapters
+  const chapterList = document.getElementById('chapters');
+  chapters.forEach(chap => {
+    const div = document.createElement('div');
+    div.className = 'chapter-item';
+    div.innerHTML = `<span>${chap.title}</span> <span class="chapter-time">${formatTime(chap.time)}</span>`;
+    div.onclick = () => seekTo(chap.time);
+    chapterList.appendChild(div);
+  });
+
+  // Render Transcript
+  const transcriptDiv = document.getElementById('transcript');
+  
+  function renderTranscript(items) {
+    transcriptDiv.innerHTML = '';
+    if(items.length === 0) {
+      transcriptDiv.innerHTML = '<div style="color:var(--muted);padding:10px">No matches found.</div>';
+      return;
+    }
+
+    items.forEach(line => {
+      const el = document.createElement('div');
+      el.className = 't-line';
+      el.onclick = () => seekTo(line.time);
+      
+      const tsSpan = document.createElement('span');
+      tsSpan.className = 'ts';
+      tsSpan.innerText = formatTime(line.time);
+      
+      const textSpan = document.createElement('span');
+      textSpan.className = 'text-content';
+      textSpan.innerHTML = line.text; // InnerHTML used for highlighting
+      
+      el.appendChild(tsSpan);
+      el.appendChild(textSpan);
+      transcriptDiv.appendChild(el);
+    });
+    toggleTimestamps(); // Ensure state matches checkbox
+  }
+
+  // Initial render
+  renderTranscript(fullTranscript);
+
+
+  // --- 4. FUNCTIONS ---
+
+  function seekTo(seconds) {
+    if(player && player.seekTo) {
+      player.seekTo(seconds, true);
+      player.playVideo();
+    }
+  }
+
+  function formatTime(seconds) {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+  }
+
+  // --- 5. EVENT LISTENERS ---
+
+  // Play/Pause
+  document.getElementById('playPause').onclick = function() {
+    if(!player) return;
+    const state = player.getPlayerState();
+    if(state === 1) player.pauseVideo();
+    else player.playVideo();
+  };
+
+  // Mute Toggle
+  document.getElementById('muteBtn').onclick = function() {
+    if(!player) return;
+    if(player.isMuted()) {
+      player.unMute();
+      this.innerText = "Mute";
+    } else {
+      player.mute();
+      this.innerText = "Unmute";
+    }
+  };
+
+  // Toggle Timestamps
+  const tsCheckbox = document.getElementById('showTimestamps');
+  function toggleTimestamps() {
+    const spans = document.querySelectorAll('.ts');
+    spans.forEach(s => s.style.display = tsCheckbox.checked ? 'inline' : 'none');
+  }
+  tsCheckbox.onchange = toggleTimestamps;
+
+  // Search Functionality
+  const searchInput = document.getElementById('searchInput');
+  
+  function performSearch() {
+    const query = searchInput.value.toLowerCase();
+    if(!query) {
+      renderTranscript(fullTranscript);
+      return;
+    }
+
+    // Filter and Highlight
+    const filtered = fullTranscript.filter(t => t.text.toLowerCase().includes(query)).map(item => {
+      // Create a copy so we don't mess up original data
+      let newItem = { ...item };
+      // Simple highlight replace (case insensitive)
+      const regex = new RegExp(`(${query})`, 'gi');
+      newItem.text = item.text.replace(regex, '<span class="highlight">$1</span>');
+      return newItem;
+    });
+    
+    renderTranscript(filtered);
+  }
+
+  document.getElementById('searchBtn').onclick = performSearch;
+  
+  // Allow "Enter" key to search
+  searchInput.addEventListener("keypress", function(event) {
+    if (event.key === "Enter") performSearch();
+  });
+
+  document.getElementById('clearSearch').onclick = function() {
+    searchInput.value = '';
+    renderTranscript(fullTranscript);
+  };
+
+</script>
+</body>
+</html>
+```
